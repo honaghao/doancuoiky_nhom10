@@ -1,3 +1,6 @@
+########################################Train lại với 27 data################################################
+
+
 #Dùng thư viện OpenCV2 (cv2) để thu thập dữ liệu từ camera
 
 import os
@@ -10,7 +13,7 @@ if not os.path.exists(DATA_DIR): #kiểm tra xem đã có thư mục chưa, nế
     os.makedirs(DATA_DIR)
 
 number_of_classes = 27 #số lượng lớp (hoặc danh mục) muốn tạo (27 ký tự)
-dataset_size = 500 #số hình ảnh muốn thu thập cho mỗi lớp (càng lớn thì mô hình càng chính xác)
+dataset_size = 800 #số hình ảnh muốn thu thập cho mỗi lớp (càng lớn thì mô hình càng chính xác)
 
 cap = cv2.VideoCapture(0) #kết nối tới camera (camera 0 là mặc định của laptop)
 for j in range(number_of_classes): #lặp qua từng lớp

@@ -1,86 +1,100 @@
 import pickle
-from sklearn.ensemble import RandomForestClassifier #tạo và huấn luyện mô hình RandomForest
-from sklearn.model_selection import train_test_split #chia dữ liệu thành tập huấn luyện và tập kiểm tra
-from sklearn.metrics import accuracy_score #để tính toán độ chính xác của mô hình.
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import log_loss
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, log_loss
 
+# Load data from pickle file
+data_dict = pickle.load(open('./data.pickle', 'rb'))
 
-
-
-
-# Load the data from the pickle file
-with open('./data.pickle', 'rb') as f:
-    data_dict = pickle.load(f)
-
-# Dung để kiểm tra cấu trúc và kiểu dữ liệu của dữ liệu đã tải từ tập tin pickle, giúp kiểm tra và chẩn đoán vấn đề nếu có.
-print(f"Type of data_dict['data']: {type(data_dict['data'])}")
-print(f"Type of elements in data_dict['data']: {type(data_dict['data'][0])}")
-print(f"First element in data_dict['data']: {data_dict['data'][0]}")
-print(f"Shape of first element in data_dict['data']: {np.array(data_dict['data'][0]).shape}")
-
-#Sử dụng vòng lặp để tìm chiều dài lớn nhất của các chuỗi trong dữ liệu.
-max_len = max(len(d) for d in data_dict['data'])
-
-# Ensure that all data points are the same length by padding them,  các giá trị 0 được thêm vào cuối chuỗi cho đến khi độ dài của chuỗi đạt đến độ dài lớn nhất của các chuỗi trong tập dữ liệu
-data = np.array([np.pad(d, (0, max_len - len(d)), 'constant', constant_values=0) for d in data_dict['data']])
+data = np.asarray(data_dict['data'])
 labels = np.asarray(data_dict['labels'])
 
-# Print shapes to confirm consistency
-print(f"Shape of data: {data.shape}")
-print(f"Shape of labels: {labels.shape}")
-
-# Check if all data points have the same shape
-if len(set(d.shape for d in data)) != 1:
-    raise ValueError("Not all data points have the same shape")
-
-# Chia dữ liệu thành hai phần: tập huấn luyện và tập kiểm tra
+# Split data into training and testing sets
 x_train, x_test, y_train, y_test = train_test_split(data, labels, test_size=0.2, shuffle=True, stratify=labels)
 
-# Initialize the model
-model = RandomForestClassifier()
-
-# Lists to store loss and accuracy values
-train_losses = []
+# Initialize lists to store accuracy and loss
 train_accuracies = []
+train_losses = []
+val_accuracies = []
+val_losses = []
 
-# Number of epochs
-num_epochs = 10  # Thay đổi số lượng epochs tùy ý
+# Number of splits
+n_splits = 50
+chunk_size = len(x_train) // n_splits
 
-# Train the model
-for epoch in range(num_epochs):
-    model.fit(x_train, y_train)
-    # Calculate training loss
-    y_pred_train = model.predict_proba(x_train)
-    train_loss = log_loss(y_train, y_pred_train)
-    # Calculate initial training loss
-    if epoch == 0:
-        train_loss_initial = train_loss
-    # Convert loss to percentage
-    train_loss_percentage = (train_loss / train_loss_initial) * 100
-    train_losses.append(train_loss_percentage)
-    # Calculate training accuracy
-    train_accuracy = model.score(x_train, y_train)
-    train_accuracies.append(train_accuracy)
+for i in range(1, n_splits + 1):
+    # Get subset of training data
+    x_train_subset = x_train[:i * chunk_size]
+    y_train_subset = y_train[:i * chunk_size]
 
-# Number of epochs
-epochs = len(train_losses)
+    # Initialize and train model
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    model.fit(x_train_subset, y_train_subset)
 
-# Biểu đồ loss
-plt.figure(figsize=(12, 6))
-plt.plot(range(1, epochs + 1), train_losses, label='Training Loss')
-plt.title('Training Loss over Epochs')
-plt.xlabel('Epoch')
-plt.ylabel('Loss (%)')
-plt.legend()
-plt.show()
+    # Predict on the training set
+    y_train_predict = model.predict(x_train_subset)
+    y_train_predict_proba = model.predict_proba(x_train_subset)
 
-# Biểu đồ accuracy
-plt.figure(figsize=(12, 6))
-plt.plot(range(1, epochs + 1), train_accuracies, label='Training Accuracy')
-plt.title('Training Accuracy over Epochs')
+    # Predict on the test set
+    y_test_predict = model.predict(x_test)
+    y_test_predict_proba = model.predict_proba(x_test)
+
+    # Calculate training accuracy and log loss
+    train_acc = accuracy_score(y_train_subset, y_train_predict)
+    train_loss = log_loss(y_train_subset, y_train_predict_proba)
+
+    # Calculate validation accuracy and log loss
+    val_acc = accuracy_score(y_test, y_test_predict)
+    val_loss = log_loss(y_test, y_test_predict_proba)
+
+    # Store accuracy and loss
+    train_accuracies.append(train_acc)
+    train_losses.append(train_loss)
+    val_accuracies.append(val_acc)
+    val_losses.append(val_loss)
+
+    # Print accuracy and loss for current epoch
+    print(f'Epoch {i}: Train Accuracy = {train_acc}, Train Loss = {train_loss}, Val Accuracy = {val_acc}, Val Loss = {val_loss}')
+
+# Plot accuracy
+epochs = range(1, n_splits + 1)
+
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+plt.plot(epochs, train_accuracies, label='Train Accuracy')
+plt.plot(epochs, val_accuracies, label='Validation Accuracy')
 plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
+plt.title('Train vs Validation Accuracy over epochs')
 plt.legend()
+
+# Plot loss
+plt.subplot(1, 2, 2)
+plt.plot(epochs, train_losses, label='Train Loss')
+plt.plot(epochs, val_losses, label='Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Train vs Validation Loss over epochs')
+plt.legend()
+
+plt.tight_layout()
 plt.show()
+
+# Train final model on full training data
+final_model = RandomForestClassifier(n_estimators=100, random_state=42)
+final_model.fit(x_train, y_train)
+
+# Predict on the test set
+final_y_predict = final_model.predict(x_test)
+
+# Calculate final accuracy
+final_score = accuracy_score(final_y_predict, y_test)
+
+print('{}% of samples were classified correctly!'.format(final_score * 100))
+
+# Save the final model to file
+with open('model.p', 'wb') as f:
+    pickle.dump({'model': final_model}, f)

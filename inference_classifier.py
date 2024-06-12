@@ -17,11 +17,13 @@ mp_drawing_styles = mp.solutions.drawing_styles
 hands = mp_hands.Hands(static_image_mode=True, min_detection_confidence=0.3) #là đối tượng MediaPipe để phát hiện tay với chế độ hình ảnh tĩnh và độ tin cậy phát hiện tối thiểu là 0.3.
 
 labels_dict = {
-    0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'Đ', 5: 'E', 6: 'G', 7: 'H',
+    0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G', 7: 'H',
     8: 'I', 9: 'K', 10: 'L', 11: 'M', 12: 'N', 13: 'O', 14: 'P', 15: 'Q',
-    16: 'R', 17: 'S', 18: 'T', 19: 'U', 20: 'V', 21: 'X', 22: 'Y', 23: 'Like', 24: 'Ă',
-    25: 'Â', 26: 'Ô'
-} #Gắn nhãn các số dự đoán từ mô hình sang các ký tự hoặc cử chỉ tương ứng.
+    16: 'R', 17: 'S', 18: 'T', 19: 'U', 20: 'V', 21: 'W', 22: 'X', 23: 'Y', 
+    24: 'Hello', 25: 'Like', 26: 'Heart'
+}
+
+ #Gắn nhãn các số dự đoán từ mô hình sang các ký tự hoặc cử chỉ tương ứng.
 while True:
     
     data_aux = []
@@ -87,3 +89,4 @@ while True:
 cap.release()
 cv2.destroyAllWindows()
     
+#Đoạn mã này thực hiện việc nhận diện cử chỉ tay từ video trực tiếp. Nó sử dụng MediaPipe để phát hiện và vẽ các điểm landmarks trên bàn tay, sau đó sử dụng mô hình đã huấn luyện để dự đoán ký tự hoặc cử chỉ từ các điểm landmarks này và hiển thị kết quả lên video.
